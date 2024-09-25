@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Gamer Page</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      background-color: #ffcc00;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      color: #333;
+    }
+
+    nav {
+      background-color: #333;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      padding: 20px;
+    }
+
+    .game-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      margin: 15px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .game-card img {
+      width: 100%;
+      height: auto;
+    }
+
+    .game-card h2 {
+      padding: 15px;
+    }
+
+    .game-card button {
+      background-color: #ffcc00;
+      color: #333;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.3s;
+    }
+
+    .game-card button:hover {
+      background-color: #ff9900;
+    }
+
+    #geometryDashGame {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      background-color: #333;
+      color: white;
+      text-align: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    #gameCanvas {
+      background-color: lightblue;
+      margin: 20px auto;
+      display: block;
+      border: 2px solid black;
+    }
+
+    #closeGameBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: red;
+      color: white;
+      padding: 10px;
+      cursor: pointer;
+      border: none;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Gamer Page</h1>
+</header>
+
+<nav>
+  <a href="#">Home</a>
+  <a href="#">Popular</a>
+  <a href="#">New</a>
+</nav>
+
+<div class="container">
+  <div class="game-card">
+    <img src="https://via.placeholder.com/300x200" alt="Minecraft Classic">
+    <h2>Minecraft Classic</h2>
+    <button onclick="openGame('https://webdev-maker.github.io/Minecraft-classic/')">Play Game</button>
+  </div>
+
+  <div class="game-card">
+    <img src="https://via.placeholder.com/300x200" alt="That's Different">
+    <h2>That's Different</h2>
+    <button onclick="openGame('https://webdev-maker.github.io/That-s-different/')">Play Game</button>
+  </div>
+
+  <div class="game-card">
+    <img src="https://upload.wikimedia.org/wikipedia/en/4/4d/Logo_of_Geometry_Dash.svg" alt="Geometry Dash Logo" style="height: 200px;">
+    <h2>Geometry Dash</h2>
+    <button onclick="openGeometryDash()">Play Game</button>
+  </div>
+
+  <div class="game-card">
+    <img src="https://slither.io/images/logo.png" alt="Slither.io Logo" style="height: 200px;">
+    <h2>Slither.io</h2>
+    <button onclick="openSlitherio()">Play Game</button>
+  </div>
+</div>
+
+<!-- Geometry Dash Game -->
+<div id="geometryDashGame">
+  <button id="closeGameBtn" onclick="closeGeometryDash()">Close</button>
+  <div id="gameCanvas" width="800" height="400"></div>
+</div>
+
+<!-- Slither.io Game -->
+<div id="slitherioGame">
+  <button id="closeSlitherioBtn" onclick="closeSlitherio()">Close</button>
+  <iframe src="https://slither.io/"></iframe>
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Game variables
+  let player = { x: 50, y: 300, width: 30, height: 30, dy: 0, gravity: 0.5, jumpForce: -10, grounded: false };
+  let obstacles = [];
+  let isJumping = false;
+  let score = 0;
+  let gameSpeed = 2;
+
+  // Create obstacle
+  function createObstacle() {
+    const obstacleHeight = Math.random() * (150 - 50) + 50;
+    obstacles.push({ x: canvas.width, y: canvas.height - obstacleHeight, width: 20, height: obstacleHeight });
+  }
+
+  // Handle player jump
+  function jump() {
+    if (!isJumping) {
+      player.dy = player.jumpForce;
+      isJumping = true;
+    }
+  }
+
+  // Collision detection: AABB (Axis-Aligned Bounding Box)
+  function isCollision(player, obstacle) {
+    return (
+      player.x < obstacle.x + obstacle.width &&
+      player.x + player.width > obstacle.x &&
+      player.y < obstacle.y + obstacle.height &&
+      player.y + player.height > obstacle.y
+    );
+  }
+
+  // Game loop
+  function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Player physics
+    player.dy += player.gravity;
+    player.y += player.dy;
+
+    // Restrict player to ground level
+    if (player.y + player.height >= canvas.height) {
+      player.y = canvas.height - player.height;
+      player.dy = 0;
+      isJumping = false;
+    }
+
+    // Draw player
+    ctx.fillStyle = 'red';
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    // Update and draw obstacles
+    obstacles.forEach((obstacle, index) => {
+      obstacle.x -= gameSpeed;
+      ctx.fillStyle = 'orange';
+      ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+
+      // Check for collision
+      if (isCollision(player, obstacle)) {
+        alert('Game Over! Your score: ' + score);
+        resetGame();
+      }
+
+      // Remove obstacle if off screen
+      if (obstacle.x + obstacle.width < 0) {
+        obstacles.splice(index, 1);
+        score++;
+      }
+    });
+
+    // Generate new obstacles periodically
+    if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < canvas.width - 300) {
+      createObstacle();
+    }
+
+    // Request the next frame
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Reset game
+  function resetGame() {
+    player = { x: 50, y: 300, width: 30, height: 30, dy: 0, gravity: 0.5, jumpForce: -10, grounded: false };
+    obstacles = [];
+    score = 0;
+  }
+
+  // Jump event listener
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      jump();
+    }
+  });
+
+  // Open Geometry Dash game
+  function openGeometryDash() {
+    const game = document.getElementById('geometryDashGame');
+    game.style.display = 'block';
+    gameLoop(); // Start the game loop
+  }
+
+  // Close Geometry Dash game
+  function closeGeometryDash() {
+    const game = document.getElementById('geometryDashGame');
+    game.style.display = 'none';
+    resetGame(); // Reset the game when closed
+  }
+
+  // Open Slither.io game
+  function openSlitherio() {
+    const game = document.getElementById('slitherioGame');
+    game.style.display = 'block';
+  }
+
+  // Close Slither.io game
+  function closeSlitherio() {
+    const game = document.getElementById('slitherioGame');
+    game.style.display = 'none';
+  }
+</script>
+
+</body>
+</html>
